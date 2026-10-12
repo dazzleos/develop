@@ -5,6 +5,7 @@
 
 const std = @import("std");
 const linux = std.os.linux;
+const app = @import("app");
 const sys = @import("sys");
 
 /// The most output kept from a run.
@@ -125,14 +126,12 @@ pub const Runner = struct {
                 } else |_| {}
             }
 
-            const Environ = std.process.Environ;
             var home_env_buf: [512]u8 = undefined;
             var tmp_env_buf: [512]u8 = undefined;
             var local_cache_env_buf: [512]u8 = undefined;
             var global_cache_env_buf: [512]u8 = undefined;
             var lib_env_buf: [512]u8 = undefined;
-            var xdg_env_buf: [256]u8 = undefined;
-            var wayland_env_buf: [256]u8 = undefined;
+            var wayland_env: app.ChildEnv = undefined;
 
             var envp: [12:null]?[*:0]const u8 = @splat(null);
             var env_i: usize = 0;
@@ -160,17 +159,9 @@ pub const Runner = struct {
             env_i += 1;
             envp[env_i] = "TERM=dumb";
             env_i += 1;
-            if (Environ.getPosix(environ, "XDG_RUNTIME_DIR")) |xdg| {
-                if (std.fmt.bufPrintZ(&xdg_env_buf, "XDG_RUNTIME_DIR={s}", .{xdg})) |s| {
-                    envp[env_i] = s.ptr;
-                    env_i += 1;
-                } else |_| {}
-            }
-            if (Environ.getPosix(environ, "WAYLAND_DISPLAY")) |wd| {
-                if (std.fmt.bufPrintZ(&wayland_env_buf, "WAYLAND_DISPLAY={s}", .{wd})) |s| {
-                    envp[env_i] = s.ptr;
-                    env_i += 1;
-                } else |_| {}
+            for (wayland_env.init(environ, null)) |v| {
+                envp[env_i] = v;
+                env_i += 1;
             }
 
             const argv = [_:null]?[*:0]const u8{
