@@ -34,7 +34,17 @@ pub const Develop = struct {
     on_drag: ?ui.Callback = null,
     maximized: bool = true,
 
-    pub fn build(self: *const Develop, cx: *ui.Context) ui.Widget {
+    pub const State = struct {
+        dismissed: bool = false,
+        last_err_buf: [128]u8 = undefined,
+        last_err_len: u8 = 0,
+
+        fn dismiss(st: *State) void {
+            st.dismissed = true;
+        }
+    };
+
+    pub fn build(self: *const Develop, cx: *ui.Context, state: *State) ui.Widget {
         const t = cx.theme();
         const is_running = self.status == .running;
 
@@ -169,10 +179,25 @@ pub const Develop = struct {
             }),
         });
 
+        const err_msg: []const u8 = switch (self.saved) {
+            .failed => |why| cx.fmt("Not saved: {s}", .{why}),
+            else => "",
+        };
+        if (err_msg.len == 0) {
+            state.dismissed = false;
+            state.last_err_len = 0;
+        } else if (!std.mem.eql(u8, state.last_err_buf[0..state.last_err_len], err_msg)) {
+            const n: u8 = @intCast(@min(err_msg.len, state.last_err_buf.len));
+            @memcpy(state.last_err_buf[0..n], err_msg[0..n]);
+            state.last_err_len = n;
+            state.dismissed = false;
+        }
+        const snackbar_msg = if (state.dismissed) "" else err_msg;
+
         const saved_label: []const u8 = switch (self.saved) {
             .saved => "Saved",
             .changed => "Saving\u{2026}",
-            .failed => |why| cx.fmt("Not saved: {s}", .{why}),
+            .failed => "",
         };
 
         return cx.make(ui.Column{
@@ -187,17 +212,28 @@ pub const Develop = struct {
                 }),
                 toolbar,
                 cx.make(ui.Expanded{
-                    .flex = 3,
-                    .child = cx.make(ui.Padding{
-                        .padding = .{ .left = 12, .right = 12, .top = 4, .bottom = 4 },
-                        .child = editor_body,
-                    }),
-                }),
-                cx.make(ui.Expanded{
-                    .flex = 2,
-                    .child = cx.make(ui.Padding{
-                        .padding = .{ .left = 12, .right = 12, .top = 4, .bottom = 6 },
-                        .child = output_pane,
+                    .child = cx.make(ui.Snackbar{
+                        .message = snackbar_msg,
+                        .on_dismiss = .of(state, State.dismiss),
+                        .child = cx.make(ui.Column{
+                            .cross_axis_alignment = .stretch,
+                            .children = &.{
+                                cx.make(ui.Expanded{
+                                    .flex = 3,
+                                    .child = cx.make(ui.Padding{
+                                        .padding = .{ .left = 12, .right = 12, .top = 4, .bottom = 4 },
+                                        .child = editor_body,
+                                    }),
+                                }),
+                                cx.make(ui.Expanded{
+                                    .flex = 2,
+                                    .child = cx.make(ui.Padding{
+                                        .padding = .{ .left = 12, .right = 12, .top = 4, .bottom = 6 },
+                                        .child = output_pane,
+                                    }),
+                                }),
+                            },
+                        }),
                     }),
                 }),
                 if (self.doc != null)
@@ -216,7 +252,7 @@ pub const Develop = struct {
                                 }),
                                 cx.make(ui.Text{
                                     .text = saved_label,
-                                    .style = .{ .size = 14, .color = if (self.saved == .failed) t.@"error" else t.on_surface_variant },
+                                    .style = .{ .size = 14, .color = t.on_surface_variant },
                                     .wrap = false,
                                 }),
                             },
