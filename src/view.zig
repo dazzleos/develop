@@ -110,6 +110,7 @@ pub const Develop = struct {
                         cx.make(ui.OutlinedButton{
                             .icon = .delete,
                             .label = "Clear",
+                            .destructive = true,
                             .on_press = self.on_clear,
                         })
                     else
