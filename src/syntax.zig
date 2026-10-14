@@ -63,19 +63,19 @@ fn isOneOf(word: []const u8, comptime words: []const []const u8) bool {
 }
 
 const zig_keywords = [_][]const u8{
-    "addrspace", "align",    "allowzero", "and",         "anyframe",    "asm",     "break",       "callconv",
-    "catch",     "comptime", "const",     "continue",    "defer",       "else",    "enum",        "errdefer",
-    "error",     "export",   "extern",    "fn",          "for",         "if",      "inline",      "linksection",
-    "noalias",   "noinline", "nosuspend", "opaque",      "or",          "orelse",  "packed",      "pub",
-    "resume",    "return",   "struct",    "suspend",     "switch",      "test",    "threadlocal", "try",
-    "union",     "usingnamespace", "var", "volatile",    "while",
+    "addrspace", "align",          "allowzero", "and",      "anyframe", "asm",    "break",       "callconv",
+    "catch",     "comptime",       "const",     "continue", "defer",    "else",   "enum",        "errdefer",
+    "error",     "export",         "extern",    "fn",       "for",      "if",     "inline",      "linksection",
+    "noalias",   "noinline",       "nosuspend", "opaque",   "or",       "orelse", "packed",      "pub",
+    "resume",    "return",         "struct",    "suspend",  "switch",   "test",   "threadlocal", "try",
+    "union",     "usingnamespace", "var",       "volatile", "while",
 };
 
 const zig_types = [_][]const u8{
-    "bool",       "void",          "type",          "anytype",        "anyerror", "anyopaque", "noreturn",
-    "usize",      "isize",         "comptime_int",  "comptime_float", "f16",      "f32",       "f64",
-    "f80",        "f128",          "c_int",         "c_uint",         "c_long",   "c_ulong",   "c_char",
-    "c_short",    "c_ushort",      "c_longlong",    "c_ulonglong",    "c_longdouble",
+    "bool",    "void",     "type",         "anytype",        "anyerror",     "anyopaque", "noreturn",
+    "usize",   "isize",    "comptime_int", "comptime_float", "f16",          "f32",       "f64",
+    "f80",     "f128",     "c_int",        "c_uint",         "c_long",       "c_ulong",   "c_char",
+    "c_short", "c_ushort", "c_longlong",   "c_ulonglong",    "c_longdouble",
 };
 
 /// Comments, strings (and multi-line ones), characters, numbers, keywords,
