@@ -76,15 +76,15 @@ pub const Runner = struct {
         var work_z_buf: [512]u8 = undefined;
         var cache_buf: [512]u8 = undefined;
         var tmp_buf: [512]u8 = undefined;
-        const work_z = std.fmt.bufPrintZ(&work_z_buf, "{s}", .{r.work_dir}) catch {
+        const work_z = std.mem.printSentinel(&work_z_buf, "{s}", .{r.work_dir}, 0) catch {
             r.status = .{ .failed = "Cannot prepare the build folder" };
             return;
         };
-        const cache_dir = std.fmt.bufPrintZ(&cache_buf, "{s}/cache", .{r.work_dir}) catch {
+        const cache_dir = std.mem.printSentinel(&cache_buf, "{s}/cache", .{r.work_dir}, 0) catch {
             r.status = .{ .failed = "Cannot prepare the build folder" };
             return;
         };
-        const tmp_dir = std.fmt.bufPrintZ(&tmp_buf, "{s}/tmp", .{r.work_dir}) catch {
+        const tmp_dir = std.mem.printSentinel(&tmp_buf, "{s}/tmp", .{r.work_dir}, 0) catch {
             r.status = .{ .failed = "Cannot prepare the build folder" };
             return;
         };
@@ -121,7 +121,7 @@ pub const Runner = struct {
 
             if (std.fs.path.dirname(source_path)) |dir| {
                 var dir_buf: [512]u8 = undefined;
-                if (std.fmt.bufPrintZ(&dir_buf, "{s}", .{dir})) |dir_z| {
+                if (std.mem.printSentinel(&dir_buf, "{s}", .{dir}, 0)) |dir_z| {
                     _ = linux.chdir(dir_z);
                 } else |_| {}
             }
@@ -135,23 +135,23 @@ pub const Runner = struct {
 
             var envp: [12:null]?[*:0]const u8 = @splat(null);
             var env_i: usize = 0;
-            if (std.fmt.bufPrintZ(&home_env_buf, "HOME={s}", .{std.fs.path.dirname(source_path) orelse "/data/user"})) |s| {
+            if (std.mem.printSentinel(&home_env_buf, "HOME={s}", .{std.fs.path.dirname(source_path) orelse "/data/user"}, 0)) |s| {
                 envp[env_i] = s.ptr;
                 env_i += 1;
             } else |_| {}
-            if (std.fmt.bufPrintZ(&tmp_env_buf, "TMPDIR={s}", .{tmp_dir})) |s| {
+            if (std.mem.printSentinel(&tmp_env_buf, "TMPDIR={s}", .{tmp_dir}, 0)) |s| {
                 envp[env_i] = s.ptr;
                 env_i += 1;
             } else |_| {}
-            if (std.fmt.bufPrintZ(&local_cache_env_buf, "ZIG_LOCAL_CACHE_DIR={s}", .{cache_dir})) |s| {
+            if (std.mem.printSentinel(&local_cache_env_buf, "ZIG_LOCAL_CACHE_DIR={s}", .{cache_dir}, 0)) |s| {
                 envp[env_i] = s.ptr;
                 env_i += 1;
             } else |_| {}
-            if (std.fmt.bufPrintZ(&global_cache_env_buf, "ZIG_GLOBAL_CACHE_DIR={s}", .{cache_dir})) |s| {
+            if (std.mem.printSentinel(&global_cache_env_buf, "ZIG_GLOBAL_CACHE_DIR={s}", .{cache_dir}, 0)) |s| {
                 envp[env_i] = s.ptr;
                 env_i += 1;
             } else |_| {}
-            if (std.fmt.bufPrintZ(&lib_env_buf, "ZIG_LIB_DIR={s}", .{lib_dir})) |s| {
+            if (std.mem.printSentinel(&lib_env_buf, "ZIG_LIB_DIR={s}", .{lib_dir}, 0)) |s| {
                 envp[env_i] = s.ptr;
                 env_i += 1;
             } else |_| {}
@@ -226,7 +226,7 @@ pub const Runner = struct {
         const changed = r.drainAvailable();
         const pid = r.pid orelse return changed;
         var wstatus: u32 = 0;
-        const rc = linux.wait4(pid, &wstatus, linux.W.NOHANG, null);
+        const rc = linux.wait4(pid, @ptrCast(&wstatus), linux.W.NOHANG, null);
         if (linux.errno(rc) == .SUCCESS and rc == 0) return changed;
 
         _ = r.drainAvailable();
@@ -252,7 +252,7 @@ pub const Runner = struct {
             _ = linux.kill(-pid, .KILL);
             _ = linux.kill(pid, .KILL);
             var wstatus: u32 = 0;
-            _ = linux.wait4(pid, &wstatus, 0, null);
+            _ = linux.wait4(pid, @ptrCast(&wstatus), 0, null);
             r.pid = null;
         }
         if (r.pipe_fd) |fd| {
@@ -267,17 +267,17 @@ const testing = std.testing;
 
 test "runner captures output and exit status from a child process" {
     var dir_buf: [64]u8 = undefined;
-    const dir = try std.fmt.bufPrintZ(&dir_buf, "/tmp/dazzle-develop-runner-test-{d}", .{linux.getpid()});
+    const dir = try std.mem.printSentinel(&dir_buf, "/tmp/dazzle-develop-runner-test-{d}", .{linux.getpid()}, 0);
     _ = linux.mkdir(dir, 0o755);
     defer sys.files.removeTree(dir);
 
     var fake_zig_buf: [128]u8 = undefined;
-    const fake_zig = try std.fmt.bufPrintZ(&fake_zig_buf, "{s}/fake-zig.sh", .{dir});
+    const fake_zig = try std.mem.printSentinel(&fake_zig_buf, "{s}/fake-zig.sh", .{dir}, 0);
     try sys.files.writeNew(fake_zig, "#!/bin/sh\necho \"ran $1 on $2\"\nexit 0\n");
     _ = linux.chmod(fake_zig, 0o755);
 
     var src_buf: [128]u8 = undefined;
-    const src = try std.fmt.bufPrintZ(&src_buf, "{s}/main.zig", .{dir});
+    const src = try std.mem.printSentinel(&src_buf, "{s}/main.zig", .{dir}, 0);
     try sys.files.writeNew(src, "pub fn main() void {}\n");
 
     var runner: Runner = .init(testing.allocator);

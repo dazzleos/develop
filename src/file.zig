@@ -79,8 +79,8 @@ pub fn save(path: []const u8, text: []const u8) SaveError!void {
     var tmp_buf: [4096]u8 = undefined;
     var path_buf: [4096]u8 = undefined;
     const dir = std.fs.path.dirname(path) orelse ".";
-    const tmp = std.fmt.bufPrintZ(&tmp_buf, "{s}/.{s}.saving", .{ dir, std.fs.path.basename(path) }) catch return error.Unexpected;
-    const dest = std.fmt.bufPrintZ(&path_buf, "{s}", .{path}) catch return error.Unexpected;
+    const tmp = std.mem.printSentinel(&tmp_buf, "{s}/.{s}.saving", .{ dir, std.fs.path.basename(path) }, 0) catch return error.Unexpected;
+    const dest = std.mem.printSentinel(&path_buf, "{s}", .{path}, 0) catch return error.Unexpected;
     var stx: linux.Statx = undefined;
     const mode: u32 = if (linux.errno(linux.statx(linux.AT.FDCWD, dest, 0, .{ .MODE = true }, &stx)) == .SUCCESS) stx.mode & 0o777 else 0o644;
     const rc = linux.open(tmp, .{ .ACCMODE = .WRONLY, .CREAT = true, .TRUNC = true, .CLOEXEC = true }, mode);
@@ -120,11 +120,11 @@ const testing = std.testing;
 
 test "opening creates starter code when missing, and saving writes whole" {
     var dir_buf: [64]u8 = undefined;
-    const dir = try std.fmt.bufPrintZ(&dir_buf, "/tmp/dazzle-develop-file-test-{d}", .{linux.getpid()});
+    const dir = try std.mem.printSentinel(&dir_buf, "/tmp/dazzle-develop-file-test-{d}", .{linux.getpid()}, 0);
     _ = linux.mkdir(dir, 0o755);
     defer sys.files.removeTree(dir);
     var path_buf: [128]u8 = undefined;
-    const path = try std.fmt.bufPrintZ(&path_buf, "{s}/main.zig", .{dir});
+    const path = try std.mem.printSentinel(&path_buf, "{s}/main.zig", .{dir}, 0);
 
     const initial = try openOrCreate(testing.allocator, path, true);
     defer testing.allocator.free(initial);
