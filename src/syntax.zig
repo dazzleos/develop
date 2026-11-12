@@ -1,9 +1,9 @@
-//! Colouring Zig source code in Develop's editor (`ui.TextArea`).
+//! Colouring Zig source code in Develop's editor (`kete.TextArea`).
 
 const std = @import("std");
-const ui = @import("ui");
+const kete = @import("kete");
 
-const Highlight = ui.Highlight;
+const Highlight = kete.TextArea.Highlight;
 
 fn isIdentStart(c: u8) bool {
     return std.ascii.isAlphabetic(c) or c == '_' or c >= 0x80;
