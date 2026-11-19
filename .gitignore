@@ -1,0 +1,5 @@
+zig-out/
+.zig-cache/
+*.key
+zig-pkg/
+build/

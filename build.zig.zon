@@ -1,0 +1,21 @@
+.{
+    .name = .develop,
+    .version = "0.0.0",
+    .fingerprint = 0x336b0f2f7777ebfe, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.17.1",
+    .dependencies = .{
+        // Dazzle's modules (kete_vc4 and the rest) and tools, which
+        // Develop is built with. To build with a Dazzle checkout beside it
+        // instead: `zig build --fork=../dazzle`.
+        .dazzle = .{
+            .url = "git+https://github.com/dazzleos/dazzle#f00c3cd1e04607150c0294c5935441e280945c20",
+            .hash = "dazzle-0.0.0-ze61IMQkzAD1mR0rkJ4mTz8l567w5GrAH0vFC0laojKQ",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "LICENSE",
+    },
+}
